@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10초 뒤의 통장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* 발표 덱과 같은 세계: 아이보리 바탕, 딥그린 본문, 테라코타는 '마감'에만. 한 화면에 한 가지 일만 보여주는 세로 구성. */
+:root{
+  --ground:#F4F1EA; --paper:#FDFCF9; --ink:#2E3D3A; --body:#4A5654;
+  --green:#3E6A5B; --tint:#E2ECE5; --terra:#9A4F33; --terra-tint:#F7E9DF; --rule:#C9D0C9;
+  --display:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --text:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--ground);color:var(--body);font-family:var(--text);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+main{min-height:100%;max-width:520px;margin:0 auto;padding:28px 22px 32px;display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-size:13px;font-weight:700;color:var(--green);letter-spacing:.02em;margin:0}
+h1{font-family:var(--display);font-weight:900;color:var(--ink);font-size:32px;line-height:1.3;margin:0;text-wrap:balance;word-break:keep-all}
+p{margin:0;word-break:keep-all}
+.lead{font-size:18px;color:var(--ink)}
+.small{font-size:14px;color:var(--body)}
+.screen{display:none;flex-direction:column;gap:22px;flex:1}
+.screen.on{display:flex}
+.push{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:18px 20px;font-size:19px;font-weight:700;width:100%;word-break:keep-all}
+button:focus-visible{outline:3px solid var(--terra);outline-offset:3px}
+.primary{background:var(--green);color:var(--paper)}
+.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.again{background:var(--terra-tint);color:var(--terra);border:1.5px solid var(--terra)}
+/* 통장 */
+.book{background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:20px 20px 22px}
+.book h2{margin:0 0 4px;font-size:15px;color:var(--body);font-weight:500}
+.rows{border-top:2px solid var(--ink);margin-top:10px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--rule);font-size:16px;font-variant-numeric:tabular-nums}
+.row span:last-child{white-space:nowrap}
+.bal{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:16px}
+.bal b{font-size:15px;color:var(--ink)}
+.bal strong{font-family:var(--display);font-weight:900;font-size:34px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* 끼어드는 말 */
+.voices{display:flex;flex-direction:column;gap:14px;min-height:260px}
+.voice{background:var(--paper);border:1px solid var(--rule);border-radius:18px 18px 18px 4px;padding:14px 18px;font-size:19px;color:var(--ink);max-width:88%;opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
+.voice.show{opacity:1;transform:none}
+.bar{height:6px;background:var(--rule);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--green)}
+/* 질문 */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opts button{background:var(--paper);color:var(--ink);border:1.5px solid var(--rule);font-variant-numeric:tabular-nums;font-size:18px;padding:18px 8px}
+.verdict{background:var(--tint);border-radius:6px;padding:18px 20px;color:var(--ink);font-weight:500}
+.big{font-family:var(--display);font-weight:900;color:var(--green);font-size:56px;line-height:1.1}
+.pair{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.voice{transition:none}}
+</style>
+</head>
+<body>
+<main>
+
+  <section class="screen on" id="s-intro" aria-labelledby="t-intro">
+    <p class="eyebrow">치매간호 팀프로젝트 · 30초 체험</p>
+    <h1 id="t-intro">통장을 한 번만 확인해 주세요</h1>
+    <p class="lead">가상의 통장을 펼쳐 잔액을 봅니다. 확인이 끝나면 덮어 주세요.</p>
+    <p class="small">치매를 재현하는 체험이 아닙니다. 확신이 흔들릴 때 드는 마음을 잠깐 느껴 보는 자리입니다.</p>
+    <div class="push"><button class="primary" id="b-open">통장 펼치기</button></div>
+  </section>
+
+  <section class="screen" id="s-book" aria-labelledby="t-book">
+    <p class="eyebrow">취침 전</p>
+    <h1 id="t-book">잔액을 확인하세요</h1>
+    <div class="book">
+      <h2>가상의 통장 · 최근 거래</h2>
+      <div class="rows" id="rows"></div>
+      <div class="bal"><b>잔액</b><strong id="bal"></strong></div>
+    </div>
+    <div class="push"><button class="primary" id="b-close">확인했어요, 통장 덮기</button></div>
+  </section>
+
+  <section class="screen" id="s-noise" aria-labelledby="t-noise">
+    <p class="eyebrow">통장을 덮은 뒤</p>
+    <h1 id="t-noise">잠시 저녁 시간이 흐릅니다</h1>
+    <div class="voices" id="voices" aria-live="polite"></div>
+    <div class="push"><div class="bar" aria-hidden="true"><i id="prog"></i></div></div>
+  </section>
+
+  <section class="screen" id="s-ask" aria-labelledby="t-ask">
+    <p class="eyebrow">10초 뒤</p>
+    <h1 id="t-ask">방금 본 잔액은 얼마였나요?</h1>
+    <div class="opts" id="opts"></div>
+    <div class="push"><button class="again" id="b-again">잘 모르겠어요, 다시 확인하고 싶어요</button></div>
+  </section>
+
+  <section class="screen" id="s-end" aria-labelledby="t-end">
+    <p class="eyebrow" id="e-eyebrow"></p>
+    <h1 id="t-end"></h1>
+    <p class="verdict" id="e-verdict"></p>
+    <div class="pair"><span class="big">4번</span><p class="lead">A님은 취침 전 1시간 동안 이 마음을 네 번 겪습니다.</p></div>
+    <p class="lead">우리는 10초였고, 통장은 남의 것이었습니다. A님에게는 평생 지켜 온 돈입니다.</p>
+    <p class="small">통장을 다시 펼치는 것은 고집이 아니라, 확인하고 싶은 마음입니다.</p>
+    <div class="push"><button class="ghost" id="b-reset">처음부터 다시</button></div>
+  </section>
+
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var screens = ["s-intro", "s-book", "s-noise", "s-ask", "s-end"];
+  var timers = [];
+  var balance = 0;
+
+  function show(id) {
+    screens.forEach(function (s) { $(s).classList.toggle("on", s === id); });
+    window.scrollTo(0, 0);
+    var h = $(id).querySelector("h1");
+    if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+  }
+  function won(n) { return n.toLocaleString("ko-KR") + "원"; }
+  function rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+  // 서로 다른 숫자 네 개로 잔액을 만들어, 비슷한 보기를 헷갈리게 구성한다
+  function makeBalance() {
+    var d = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(function () { return Math.random() - 0.5; }).slice(0, 4);
+    return d[0] * 1000000 + d[1] * 100000 + d[2] * 10000 + d[3] * 1000 + rand(1, 9) * 100;
+  }
+  function swapDigits(n, i, j) {
+    var s = String(n).split(""); var t = s[i]; s[i] = s[j]; s[j] = t; return Number(s.join(""));
+  }
+  function options(n) {
+    var set = [n, swapDigits(n, 1, 2), swapDigits(n, 2, 3), swapDigits(n, 0, 1)];
+    return set.sort(function () { return Math.random() - 0.5; });
+  }
+
+  function openBook() {
+    balance = makeBalance();
+    var tx = [["연금 입금", 324000], ["마트", -rand(18, 46) * 1000 - 400], ["약국", -rand(6, 14) * 1000 - 500], ["관리비", -112000]];
+    $("rows").innerHTML = tx.map(function (t) {
+      return '<div class="row"><span>' + t[0] + "</span><span>" + (t[1] > 0 ? "+" : "−") + Math.abs(t[1]).toLocaleString("ko-KR") + "</span></div>";
+    }).join("");
+    $("bal").textContent = won(balance);
+    show("s-book");
+  }
+
+  function noise() {
+    show("s-noise");
+    var lines = ["저녁은 드셨어요?", "옆집은 이상한 전화를 받았대요.", "누가 통장에서 돈을 다 빼갔다더라고요.", "어머니 통장은 괜찮으세요?"];
+    var box = $("voices"); box.innerHTML = "";
+    var total = 10000, step = 2300;
+    lines.forEach(function (t, i) {
+      later(function () {
+        var el = document.createElement("div"); el.className = "voice"; el.textContent = t; box.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add("show"); });
+      }, 400 + i * step);
+    });
+    var bar = $("prog"); bar.style.transition = "none"; bar.style.width = "0";
+    requestAnimationFrame(function () { requestAnimationFrame(function () { bar.style.transition = "width " + total + "ms linear"; bar.style.width = "100%"; }); });
+    later(ask, total);
+  }
+
+  function ask() {
+    var box = $("opts"); box.innerHTML = "";
+    options(balance).forEach(function (v) {
+      var b = document.createElement("button"); b.type = "button"; b.textContent = won(v);
+      b.addEventListener("click", function () { end(v === balance ? "right" : "wrong"); });
+      box.appendChild(b);
+    });
+    show("s-ask");
+  }
+
+  function end(kind) {
+    var copy = {
+      again: ["다시 확인하고 싶으셨군요", "방금 봤는데도 다시 펼치고 싶었습니다", "정답은 " + won(balance) + "였습니다. 틀릴까 봐 불안했고, 직접 봐야 마음이 놓일 것 같았습니다."],
+      right: ["맞혔습니다", "그런데 고르는 동안 확신이 있었나요?", "정답은 " + won(balance) + "입니다. 맞혔어도, 비슷한 숫자 사이에서 한 번 더 보고 싶지 않았는지 떠올려 보세요."],
+      wrong: ["틀렸습니다", "10초 전에 직접 본 숫자였습니다", "정답은 " + won(balance) + "였습니다. 지금 드는 ‘다시 확인해야겠다’는 마음을 기억해 주세요."]
+    }[kind];
+    $("e-eyebrow").textContent = copy[0];
+    $("t-end").textContent = copy[1];
+    $("e-verdict").textContent = copy[2];
+    show("s-end");
+  }
+
+  $("b-open").addEventListener("click", openBook);
+  $("b-close").addEventListener("click", noise);
+  $("b-again").addEventListener("click", function () { end("again"); });
+  $("b-reset").addEventListener("click", function () { clearTimers(); show("s-intro"); });
+})();
+</script>
+</body>
+</html>
